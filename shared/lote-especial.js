@@ -8,7 +8,8 @@
  *   - só os prazos/datas continuam a ser lidos da folha (a página trata disso);
  *   - a Evolução (%) é calculada pelo prazo: dias úteis decorridos / dias úteis do
  *     prazo — cada dia útil acrescenta um bloco de 100/total %;
- *   - todos os outros campos mostram o nome do tipo (ex.: "Live Demo").
+ *   - os outros campos mostram "--"; o Lote mostra o código ("001") e o nome do
+ *     tipo (ex.: "Live Demo") aparece só no cartão de alerta.
  *
  * Uso na página (dentro de renderSheetData, DEPOIS de desenhar datas/prazo):
  *
@@ -29,17 +30,17 @@
     '003': 'Manutenção',
   };
 
-  // Campos que passam a mostrar o nome do tipo (selectores comuns às páginas de posto)
-  const CAMPOS_TEXTO = [
-    '.h-op',
-    '.f-op',
-    '.f-nserie',
-    '#statusLabel',
+  // Campos que ficam com "--" (o nome do tipo só aparece no cartão de alerta)
+  const CAMPOS_VAZIOS = [
+    '.id-cliente',   // Cliente
+    '.id-modelo',    // Modelo / Equipamento
+    '.id-pais-info', // País · Idioma
+    '.h-op',         // Header: ordem de produção (ao lado de "Posto N")
+    '.f-op',         // Footer: Colaborador
+    '.f-nserie',     // Footer: nº de série
+    '#statusLabel',  // Estado (por baixo da evolução)
     '.details-section .detail-row:nth-child(3) .d-v', // Enc. Cliente
   ];
-
-  // Bloco Cliente / País / Modelo: não mostra o nome do tipo (o tipo aparece só no Lote)
-  const CAMPOS_VAZIOS = ['.id-cliente', '.id-modelo', '.id-pais-info'];
   const VAZIO = '--';
 
   function semAcentos(s) {
@@ -123,10 +124,6 @@
   }
 
   function preencherCampos({ codigo, nome }) {
-    CAMPOS_TEXTO.forEach(sel => {
-      document.querySelectorAll(sel).forEach(el => { el.textContent = nome; });
-    });
-
     CAMPOS_VAZIOS.forEach(sel => {
       document.querySelectorAll(sel).forEach(el => { el.textContent = VAZIO; });
     });
