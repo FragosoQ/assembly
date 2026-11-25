@@ -1,20 +1,27 @@
 /**
  * LOTE ESPECIAL — partilhado por todas as páginas de posto (1, 2, 3, …)
  *
- * Quando a coluna D (LOTE) da linha do posto tiver um dos códigos abaixo,
+ * Quando a coluna "LOTE" (cabeçalho exato, em maiúsculas — hoje é a coluna O)
+ * da linha do posto tiver um dos códigos abaixo,
  * o ecrã entra em "modo lote especial":
  *   - mostra um alerta (moldura âmbar a pulsar + cartão no lugar das zonas);
  *   - só os prazos/datas continuam a ser lidos da folha (a página trata disso);
+ *   - a Evolução (%) é calculada pelo prazo: dias úteis decorridos / dias úteis do
+ *     prazo — cada dia útil acrescenta um bloco de 100/total %;
  *   - todos os outros campos mostram o nome do tipo (ex.: "Live Demo").
  *
  * Uso na página (dentro de renderSheetData, DEPOIS de desenhar datas/prazo):
  *
  *   if (aplicarLoteEspecial(sheetRow)) return;
  *
- * Requer sheet-utils.js (columnLetterToIndex) carregado antes.
+ * Requer sheet-utils.js (columnLetterToIndex, getSheetRowValue, getWorkDaysCount) carregado antes.
  */
 (function () {
-  const LOTE_ESPECIAL_COLUNA = 'D';
+  // A coluna é procurada pelo cabeçalho; a letra só é usada se o cabeçalho não existir.
+  // Nota: o PM1 tem também uma coluna "Lote" (minúsculas, AK) — por isso a comparação
+  // do cabeçalho é exata, para não a confundir com "LOTE".
+  const LOTE_ESPECIAL_HEADER = 'LOTE';
+  const LOTE_ESPECIAL_COLUNA = 'O';
 
   const LOTES_ESPECIAIS = {
     '001': 'Live Demo',
@@ -24,9 +31,6 @@
 
   // Campos que passam a mostrar o nome do tipo (selectores comuns às páginas de posto)
   const CAMPOS_TEXTO = [
-    '.id-cliente',
-    '.id-modelo',
-    '.id-pais-info',
     '.h-op',
     '.f-op',
     '.f-nserie',
@@ -34,17 +38,27 @@
     '.details-section .detail-row:nth-child(3) .d-v', // Enc. Cliente
   ];
 
+  // Bloco Cliente / País / Modelo: não mostra o nome do tipo (o tipo aparece só no Lote)
+  const CAMPOS_VAZIOS = ['.id-cliente', '.id-modelo', '.id-pais-info'];
+  const VAZIO = '--';
+
   function semAcentos(s) {
     return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   }
 
+  function encontrarColunaLote(rowData, header, coluna) {
+    const cols = rowData.table && Array.isArray(rowData.table.cols) ? rowData.table.cols : [];
+    const idx = cols.findIndex(c => String(c.label || '').trim() === header);
+    return idx >= 0 ? idx : columnLetterToIndex(coluna);
+  }
+
   /**
-   * Devolve { codigo, nome } se a coluna D da linha tiver um código especial, senão null.
-   * Aceita "001", "001 - Live Demo", "1" (número), ou só o nome ("Live Demo").
+   * Devolve { codigo, nome } se a coluna LOTE da linha tiver um código especial, senão null.
+   * Aceita "001", "001 - Live Demo", 1 (número), ou só o nome ("Live Demo").
    */
-  function detetarLoteEspecial(rowData, coluna = LOTE_ESPECIAL_COLUNA) {
+  function detetarLoteEspecial(rowData, header = LOTE_ESPECIAL_HEADER, coluna = LOTE_ESPECIAL_COLUNA) {
     if (!rowData || !rowData.valuesByColumn) return null;
-    const idx = columnLetterToIndex(coluna);
+    const idx = encontrarColunaLote(rowData, header, coluna);
     const raw = rowData.valuesByColumn[idx];
     if (raw == null) return null;
 
@@ -78,14 +92,12 @@
       }
       @keyframes loteEspecialPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
-      body.lote-especial #evNum {
-        font-size: clamp(44px, 8vh, 110px) !important;
-        letter-spacing: 2px !important;
-        text-align: center; line-height: 1 !important;
-        color: #ffaa00 !important; text-shadow: 0 0 40px rgba(255,170,0,0.35) !important;
-        overflow-wrap: anywhere;
-      }
       body.lote-especial .id-flag { display: none; }
+      .id-lote .le-lote-desc {
+        margin-top: clamp(4px, 0.8vh, 8px);
+        font-size: .6em; font-weight: 700; letter-spacing: 3px;
+        text-transform: uppercase; color: #ffaa00;
+      }
 
       .lote-especial-alerta {
         grid-column: 1 / -1;
@@ -110,19 +122,21 @@
     document.head.appendChild(style);
   }
 
-  function preencherCampos(nome) {
+  function preencherCampos({ codigo, nome }) {
     CAMPOS_TEXTO.forEach(sel => {
       document.querySelectorAll(sel).forEach(el => { el.textContent = nome; });
     });
 
+    CAMPOS_VAZIOS.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => { el.textContent = VAZIO; });
+    });
+
+    // Lote: só o código por baixo, sempre com 3 dígitos ("002", nunca "2")
     const lote = document.querySelector('.id-lote');
     if (lote) {
-      lote.innerHTML = 'Lote &nbsp;·&nbsp; ';
-      lote.append(nome);
+      lote.innerHTML = 'Lote<div class="le-lote-desc"></div>';
+      lote.querySelector('.le-lote-desc').textContent = codigo;
     }
-
-    const ev = document.getElementById('evNum');
-    if (ev) ev.textContent = nome;
 
     const zg = document.getElementById('zonasGrid');
     if (zg) {
@@ -130,24 +144,78 @@
         <div class="lote-especial-alerta" role="alert">
           <div class="le-icone">⚠</div>
           <div class="le-nome"></div>
-          <div class="le-sub">Lote especial · só datas e prazo em leitura</div>
+          <div class="le-sub">Lote especial</div>
         </div>`;
       zg.querySelector('.le-nome').textContent = nome;
     }
   }
+
+  // Mesmas colunas de datas que as páginas usam para o prazo
+  const DATA_INICIO = ['DATA INICIO PRODUÇÃO', 'E'];
+  const DATA_PREVISTA = ['DATA PRETENDIDA', 'G'];
+
+  // Mesmas cores que ec() nas páginas
+  const corEvolucao = v => v >= 75 ? '#00ff87' : v >= 40 ? '#00d4ff' : '#ffaa00';
+
+  /**
+   * Evolução pelo prazo: dias úteis decorridos (incluindo hoje) / dias úteis do prazo.
+   * Ex.: prazo de 8 dias úteis → cada dia soma 12,5% (1/8, 2/8, … 8/8 = 100%).
+   * Usa a mesma contagem do bloco "Prazo", por isso bate certo com "6 / 8 dias".
+   */
+  function calcularEvolucaoPorPrazo(rowData, hoje = new Date()) {
+    const inicio = getSheetRowValue(rowData, ...DATA_INICIO);
+    const previsto = getSheetRowValue(rowData, ...DATA_PREVISTA);
+    if (inicio == null || previsto == null) return null;
+
+    const dia = new Date(hoje);
+    dia.setHours(0, 0, 0, 0);
+    const total = getWorkDaysCount(inicio, previsto, true);
+    const decorridos = getWorkDaysCount(inicio, dia, true);
+    if (!total || decorridos == null) return null;
+
+    return Math.round(Math.min(1, Math.max(0, decorridos / total)) * 100);
+  }
+
+  function mostrarEvolucao(rowData) {
+    const ev = document.getElementById('evNum');
+    if (!ev) return;
+    const pct = calcularEvolucaoPorPrazo(rowData);
+    if (pct == null) {
+      ev.textContent = '--';
+      ev.style.color = 'rgba(255,255,255,0.15)';
+      ev.style.textShadow = 'none';
+      return;
+    }
+    ev.textContent = `${pct}%`;
+    ev.style.color = corEvolucao(pct);
+    ev.style.textShadow = `0 0 60px ${corEvolucao(pct)}40`;
+  }
+
+  // A folha só redesenha a página quando os dados mudam; num lote especial a
+  // evolução avança com o calendário, por isso revemos a cada minuto (e o prazo também).
+  let ultimaLinha = null;
+  setInterval(() => {
+    if (!ultimaLinha || !document.body.classList.contains('lote-especial')) return;
+    mostrarEvolucao(ultimaLinha);
+    if (typeof updateDeadline === 'function') {
+      updateDeadline(getSheetRowValue(ultimaLinha, ...DATA_INICIO), getSheetRowValue(ultimaLinha, ...DATA_PREVISTA));
+    }
+  }, 60 * 1000);
 
   /**
    * Verifica a linha e aplica/remove o modo lote especial.
    * Devolve o tipo ({ codigo, nome }) se estiver ativo — a página deve então
    * parar de desenhar os restantes campos — ou null em caso normal.
    */
-  function aplicarLoteEspecial(rowData, coluna) {
-    const tipo = detetarLoteEspecial(rowData, coluna);
+  function aplicarLoteEspecial(rowData, header, coluna) {
+    const tipo = detetarLoteEspecial(rowData, header, coluna);
     injetarEstilos();
     document.body.classList.toggle('lote-especial', !!tipo);
+    ultimaLinha = tipo ? rowData : null;
     if (tipo) {
       document.body.dataset.loteEspecial = tipo.codigo;
-      preencherCampos(tipo.nome);
+      preencherCampos(tipo);
+      mostrarEvolucao(rowData);
     } else {
       delete document.body.dataset.loteEspecial;
     }
@@ -155,6 +223,7 @@
   }
 
   window.LOTES_ESPECIAIS = LOTES_ESPECIAIS;
+  window.calcularEvolucaoPorPrazo = calcularEvolucaoPorPrazo;
   window.detetarLoteEspecial = detetarLoteEspecial;
   window.aplicarLoteEspecial = aplicarLoteEspecial;
 })();
