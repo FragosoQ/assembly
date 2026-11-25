@@ -307,15 +307,12 @@ function renderSheetData(sheetRow) {
   renderText(dataPrevistaEl, dataPrevista != null ? formatSheetDate(dataPrevista) : EMPTY);
   updateDeadline(dataInicio, dataPrevista);
 
-  // Lote especial (coluna D = 001 Live Demo / 002 Recondicionamento / 003 Manutenção):
-  // só datas/prazo são lidos; o resto mostra o nome do tipo.
-  if (aplicarLoteEspecial(sheetRow)) return;
-
-  updateEvolucao(parseSheetPercentage(getFieldValue(sheetRow, 'EVOLUÇÃO', 'Y', null)));
-
+  // Ord. Prod., Cliente / País, Modelo / Equipamento, Colaborador e Nº de série: lidos sempre do separador do posto (também em lote especial)
+  renderText(ordProdEl, getFieldValue(sheetRow, 'ORD. PROD.', 'I', EMPTY));
+  renderText(operadorEl, getFieldValue(sheetRow, 'OPERADOR', 'AH', EMPTY));
+  renderText(nserieEl, getFieldValue(sheetRow, 'N. SÉRIE', 'X', EMPTY));
   renderText(clientEl, getFieldValue(sheetRow, 'CLIENTE', 'K', EMPTY));
   renderText(modelEl, getFieldValue(sheetRow, 'MODELO', 'N', EMPTY));
-  renderLote(getFieldValue(sheetRow, 'LOTE', 'O', EMPTY));
 
   const pais = getFieldValue(sheetRow, 'PAÍS', 'L', null);
   const idioma = getFieldValue(sheetRow, 'IDIOMA', 'M', null);
@@ -328,11 +325,15 @@ function renderSheetData(sheetRow) {
     updateGlobeDestination(pais);
   }
 
-  renderText(operadorEl, getFieldValue(sheetRow, 'OPERADOR', 'AH', EMPTY));
-  renderText(nserieEl, getFieldValue(sheetRow, 'N. SÉRIE', 'X', EMPTY));
+  // Lote especial (coluna D = 001 Live Demo / 002 Recondicionamento / 003 Manutenção):
+  // só datas/prazo, ord. prod., cliente/país, modelo, colaborador e nº de série são lidos; o resto mostra "--".
+  if (aplicarLoteEspecial(sheetRow)) return;
+
+  updateEvolucao(parseSheetPercentage(getFieldValue(sheetRow, 'EVOLUÇÃO', 'Y', null)));
+
+  renderLote(getFieldValue(sheetRow, 'LOTE', 'O', EMPTY));
 
   renderText(encCliEl, getFieldValue(sheetRow, 'ENC. CLI.', 'J', EMPTY));
-  renderText(ordProdEl, getFieldValue(sheetRow, 'ORD. PROD.', 'I', EMPTY));
 
   updateStatus(sheetRow);
   renderZones(sheetRow);

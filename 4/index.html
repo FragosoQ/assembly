@@ -293,16 +293,12 @@ function renderSheetData(sheetRow) {
   renderText(dataPrevistaEl, formatSheetDate(getFieldValue(sheetRow, 'DATA PRETENDIDA', 'G', DATA_PREVISTA_FALLBACK)), DATA_PREVISTA_FALLBACK);
   updateDeadline(getFieldValue(sheetRow, 'DATA INICIO PRODUÇÃO', 'E', null), getFieldValue(sheetRow, 'DATA PRETENDIDA', 'G', null));
 
-  // Lote especial (coluna D = 001 Live Demo / 002 Recondicionamento / 003 Manutenção):
-  // só datas/prazo são lidos; o resto mostra o nome do tipo.
-  if (aplicarLoteEspecial(sheetRow)) return;
-
-  const evRaw = getFieldValue(sheetRow, 'EVOLUÇÃO', 'Y', FALLBACK_EV);
-  updateEvolucao(parseSheetPercentage(evRaw));
-
+  // Ord. Prod., Cliente / País, Modelo / Equipamento, Colaborador e Nº de série: lidos sempre do separador do posto (também em lote especial)
+  renderText(ordProdEl, getFieldValue(sheetRow, 'ORD. PROD.', 'I', ORD_PROD_FALLBACK), ORD_PROD_FALLBACK);
+  renderText(operadorEl, getFieldValue(sheetRow, 'OPERADOR', 'AH', OPERADOR_FALLBACK), OPERADOR_FALLBACK);
+  renderText(nserieEl, getFieldValue(sheetRow, 'N. SÉRIE', 'X', NSERIE_FALLBACK), NSERIE_FALLBACK);
   renderText(clientEl, getFieldValue(sheetRow, 'CLIENTE', 'K', CLIENT_FALLBACK), CLIENT_FALLBACK);
   renderText(modelEl, getFieldValue(sheetRow, 'MODELO', 'N', MODEL_FALLBACK), MODEL_FALLBACK);
-  renderLote(getFieldValue(sheetRow, 'LOTE', 'O', LOTE_FALLBACK));
 
   const pais = getFieldValue(sheetRow, 'PAÍS', 'L', 'Portugal');
   const idioma = getFieldValue(sheetRow, 'IDIOMA', 'M', 'EN');
@@ -315,11 +311,16 @@ function renderSheetData(sheetRow) {
     updateGlobeDestination(pais);
   }
 
-  renderText(operadorEl, getFieldValue(sheetRow, 'OPERADOR', 'AH', OPERADOR_FALLBACK), OPERADOR_FALLBACK);
-  renderText(nserieEl, getFieldValue(sheetRow, 'N. SÉRIE', 'X', NSERIE_FALLBACK), NSERIE_FALLBACK);
+  // Lote especial (coluna D = 001 Live Demo / 002 Recondicionamento / 003 Manutenção):
+  // só datas/prazo, ord. prod., cliente/país, modelo, colaborador e nº de série são lidos; o resto mostra "--".
+  if (aplicarLoteEspecial(sheetRow)) return;
+
+  const evRaw = getFieldValue(sheetRow, 'EVOLUÇÃO', 'Y', FALLBACK_EV);
+  updateEvolucao(parseSheetPercentage(evRaw));
+
+  renderLote(getFieldValue(sheetRow, 'LOTE', 'O', LOTE_FALLBACK));
 
   renderText(encCliEl, getFieldValue(sheetRow, 'ENC. CLI.', 'J', ENC_CLI_FALLBACK), ENC_CLI_FALLBACK);
-  renderText(ordProdEl, getFieldValue(sheetRow, 'ORD. PROD.', 'I', ORD_PROD_FALLBACK), ORD_PROD_FALLBACK);
 
   updateStatus(sheetRow);
   renderZones(sheetRow);

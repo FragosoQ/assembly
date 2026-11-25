@@ -5,7 +5,9 @@
  * da linha do posto tiver um dos códigos abaixo,
  * o ecrã entra em "modo lote especial":
  *   - mostra um alerta (moldura âmbar a pulsar + cartão no lugar das zonas);
- *   - só os prazos/datas continuam a ser lidos da folha (a página trata disso);
+ *   - os prazos/datas, Ord. Prod. (header), Cliente/País, Modelo/Equipamento, Colaborador e Nº de série
+ *     continuam a ser lidos
+ *     do separador do posto (a página trata disso);
  *   - a Evolução (%) é calculada pelo prazo: dias úteis decorridos / dias úteis do
  *     prazo — cada dia útil acrescenta um bloco de 100/total %;
  *   - os outros campos mostram "--"; o Lote mostra o código ("001") e o nome do
@@ -33,12 +35,6 @@
 
   // Campos que ficam com "--" (o nome do tipo só aparece no cartão de alerta)
   const CAMPOS_VAZIOS = [
-    '.id-cliente',   // Cliente
-    '.id-modelo',    // Modelo / Equipamento
-    '.id-pais-info', // País · Idioma
-    '.h-op',         // Header: ordem de produção (ao lado de "Posto N")
-    '.f-op',         // Footer: Colaborador
-    '.f-nserie',     // Footer: nº de série
     '#statusLabel',  // Estado (por baixo da evolução)
     '.details-section .detail-row:nth-child(3) .d-v', // Enc. Cliente
   ];
@@ -94,7 +90,6 @@
       }
       @keyframes loteEspecialPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
-      body.lote-especial .id-flag { display: none; }
       .id-lote .le-lote-desc {
         margin-top: clamp(4px, 0.8vh, 8px);
         font-size: .6em; font-weight: 700; letter-spacing: 3px;
