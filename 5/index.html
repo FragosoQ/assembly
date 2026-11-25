@@ -145,6 +145,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="./sheet-utils.js"></script>
+<script src="../shared/lote-especial.js"></script>
 <script>
 /* ── CORES ── */
 const ec = v => v >= 75 ? '#00ff87' : v >= 40 ? '#00d4ff' : '#ffaa00';
@@ -299,6 +300,17 @@ function updateStatus(rowData) {
 function renderSheetData(sheetRow) {
   if (!sheetRow) return;
 
+  // Datas e prazo: lidos sempre (também em lote especial)
+  const dataInicio = getFieldValue(sheetRow, 'DATA INICIO PRODUÇÃO', 'E', null);
+  const dataPrevista = getFieldValue(sheetRow, 'DATA PRETENDIDA', 'G', null);
+  renderText(dataInicioEl, dataInicio != null ? formatSheetDate(dataInicio) : EMPTY);
+  renderText(dataPrevistaEl, dataPrevista != null ? formatSheetDate(dataPrevista) : EMPTY);
+  updateDeadline(dataInicio, dataPrevista);
+
+  // Lote especial (coluna D = 001 Live Demo / 002 Recondicionamento / 003 Manutenção):
+  // só datas/prazo são lidos; o resto mostra o nome do tipo.
+  if (aplicarLoteEspecial(sheetRow)) return;
+
   updateEvolucao(parseSheetPercentage(getFieldValue(sheetRow, 'EVOLUÇÃO', 'Y', null)));
 
   renderText(clientEl, getFieldValue(sheetRow, 'CLIENTE', 'K', EMPTY));
@@ -319,15 +331,9 @@ function renderSheetData(sheetRow) {
   renderText(operadorEl, getFieldValue(sheetRow, 'OPERADOR', 'AH', EMPTY));
   renderText(nserieEl, getFieldValue(sheetRow, 'N. SÉRIE', 'X', EMPTY));
 
-  const dataInicio = getFieldValue(sheetRow, 'DATA INICIO PRODUÇÃO', 'E', null);
-  const dataPrevista = getFieldValue(sheetRow, 'DATA PRETENDIDA', 'G', null);
-  renderText(dataInicioEl, dataInicio != null ? formatSheetDate(dataInicio) : EMPTY);
-  renderText(dataPrevistaEl, dataPrevista != null ? formatSheetDate(dataPrevista) : EMPTY);
-
   renderText(encCliEl, getFieldValue(sheetRow, 'ENC. CLI.', 'J', EMPTY));
   renderText(ordProdEl, getFieldValue(sheetRow, 'ORD. PROD.', 'I', EMPTY));
 
-  updateDeadline(dataInicio, dataPrevista);
   updateStatus(sheetRow);
   renderZones(sheetRow);
 }

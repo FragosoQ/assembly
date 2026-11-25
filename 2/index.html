@@ -146,6 +146,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="./sheet-utils.js"></script>
+<script src="../shared/lote-especial.js"></script>
 <script>
 /* ── CORES ── */
 const ec = v => v >= 75 ? '#00ff87' : v >= 40 ? '#00d4ff' : '#ffaa00';
@@ -288,6 +289,15 @@ function updateStatus(rowData) {
 function renderSheetData(sheetRow) {
   if (!sheetRow) return;
 
+  // Datas e prazo: lidos sempre (também em lote especial)
+  renderText(dataInicioEl, formatSheetDate(getFieldValue(sheetRow, 'DATA INICIO PRODUÇÃO', 'E', DATA_INICIO_FALLBACK)), DATA_INICIO_FALLBACK);
+  renderText(dataPrevistaEl, formatSheetDate(getFieldValue(sheetRow, 'DATA PRETENDIDA', 'G', DATA_PREVISTA_FALLBACK)), DATA_PREVISTA_FALLBACK);
+  updateDeadline(getFieldValue(sheetRow, 'DATA INICIO PRODUÇÃO', 'E', null), getFieldValue(sheetRow, 'DATA PRETENDIDA', 'G', null));
+
+  // Lote especial (coluna D = 001 Live Demo / 002 Recondicionamento / 003 Manutenção):
+  // só datas/prazo são lidos; o resto mostra o nome do tipo.
+  if (aplicarLoteEspecial(sheetRow)) return;
+
   const evRaw = getFieldValue(sheetRow, 'EVOLUÇÃO', 'Y', FALLBACK_EV);
   updateEvolucao(parseSheetPercentage(evRaw));
 
@@ -309,13 +319,9 @@ function renderSheetData(sheetRow) {
   renderText(operadorEl, getFieldValue(sheetRow, 'OPERADOR', 'AH', OPERADOR_FALLBACK), OPERADOR_FALLBACK);
   renderText(nserieEl, getFieldValue(sheetRow, 'N. SÉRIE', 'X', NSERIE_FALLBACK), NSERIE_FALLBACK);
 
-  renderText(dataInicioEl, formatSheetDate(getFieldValue(sheetRow, 'DATA INICIO PRODUÇÃO', 'E', DATA_INICIO_FALLBACK)), DATA_INICIO_FALLBACK);
-  renderText(dataPrevistaEl, formatSheetDate(getFieldValue(sheetRow, 'DATA PRETENDIDA', 'G', DATA_PREVISTA_FALLBACK)), DATA_PREVISTA_FALLBACK);
-
   renderText(encCliEl, getFieldValue(sheetRow, 'ENC. CLI.', 'J', ENC_CLI_FALLBACK), ENC_CLI_FALLBACK);
   renderText(ordProdEl, getFieldValue(sheetRow, 'ORD. PROD.', 'I', ORD_PROD_FALLBACK), ORD_PROD_FALLBACK);
 
-  updateDeadline(getFieldValue(sheetRow, 'DATA INICIO PRODUÇÃO', 'E', null), getFieldValue(sheetRow, 'DATA PRETENDIDA', 'G', null));
   updateStatus(sheetRow);
   renderZones(sheetRow);
 }
