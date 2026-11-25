@@ -28,6 +28,7 @@
     '001': 'Live Demo',
     '002': 'Recondicionamento',
     '003': 'Manutenção',
+    '004': 'FAT',
   };
 
   // Campos que ficam com "--" (o nome do tipo só aparece no cartão de alerta)
