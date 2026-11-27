@@ -4,7 +4,7 @@
  * Quando a coluna "LOTE" (cabeçalho exato, em maiúsculas — hoje é a coluna O)
  * da linha do posto tiver um dos códigos abaixo,
  * o ecrã entra em "modo lote especial":
- *   - mostra um alerta (moldura âmbar a pulsar + cartão no lugar das zonas);
+ *   - mostra um alerta (cartão no lugar das zonas);
  *   - os prazos/datas, Ord. Prod. (header), Cliente/País, Modelo/Equipamento, Colaborador e Nº de série
  *     continuam a ser lidos
  *     do separador do posto (a página trata disso);
@@ -83,13 +83,6 @@
     const style = document.createElement('style');
     style.id = 'lote-especial-css';
     style.textContent = `
-      body.lote-especial::after {
-        content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 50;
-        border: 4px solid #ffaa00; box-shadow: inset 0 0 60px rgba(255,170,0,0.35);
-        animation: loteEspecialPulse 1.6s ease-in-out infinite;
-      }
-      @keyframes loteEspecialPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
-
       .id-lote .le-lote-desc {
         margin-top: clamp(4px, 0.8vh, 8px);
         font-size: .6em; font-weight: 700; letter-spacing: 3px;
@@ -103,7 +96,6 @@
         padding: clamp(14px, 2.4vh, 28px);
         border: 2px solid #ffaa00; border-radius: 12px;
         background: rgba(255,170,0,0.12);
-        animation: loteEspecialPulse 1.6s ease-in-out infinite;
       }
       .lote-especial-alerta .le-icone { font-size: clamp(28px, 4.5vh, 56px); line-height: 1; }
       .lote-especial-alerta .le-nome {
